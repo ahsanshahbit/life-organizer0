@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enhanced AI Daily Organizer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    const App = () => {
+      const [tasks, setTasks] = useState([]);
+      const [taskName, setTaskName] = useState('');
+      const [priority, setPriority] = useState('Medium');
+      const [category, setCategory] = useState('Work');
+      const [duration, setDuration] = useState(30);
+      const [notes, setNotes] = useState('');
+      const [dueDate, setDueDate] = useState('');
+      const [darkMode, setDarkMode] = useState(false);
+      const [viewMode, setViewMode] = useState('Daily');
+      const [workingHours, setWorkingHours] = useState({ start: 8, end: 18 });
+      const [notificationsAllowed, setNotificationsAllowed] = useState(false);
+
+      // Sample quotes
+      const quotes = [
+        "The secret of getting ahead is getting started.",
+        "You don't have to be great to start, but you have to start to be great.",
+        "Small steps every day lead to big results."
+      ];
+
+      // Load saved tasks
+      useEffect(() => {
+        const savedTasks = localStorage.getItem('tasks');
+        if (savedTasks) setTasks(JSON.parse(savedTasks));
+      }, []);
+
+      // Save tasks
+      useEffect(() => {
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+      }, [tasks]);
+
+      // Add task function
+      const addTask = (e) => {
+        e.preventDefault();
+        if (!taskName.trim()) return;
+
+        const newTask = {
+          id: Date.now(),
+          name: taskName,
+          priority,
+          category,
+          duration: parseInt(duration),
+          notes,
+          dueDate,
+          completed: false,
+          reminderShown: false,
+          created: new Date().toISOString()
+        };
+
+        setTasks([...tasks, newTask]);
+        setTaskName('');
+        setNotes('');
+      };
+
+      // Toggle task completion
+      const toggleComplete = (id) => {
+        setTasks(tasks.map(task => 
+          task.id === id ? { 
+            ...task, 
+            completed: !task.completed,
+            completedDate: !task.completed ? new Date().toDateString() : undefined
+          } : task
+        ));
+      };
+
+      // Delete task
+      const deleteTask = (id) => {
+        setTasks(tasks.filter(task => task.id !== id));
+      };
+
+      // Calculate progress
+      const progress = tasks.length > 0
+        ? Math.round((tasks.filter(task => task.completed).length / tasks.length) * 100)
+        : 0;
+
+      // Completed today
+      const completedToday = tasks.filter(task => 
+        task.completed && task.completedDate === new Date().toDateString()
+      ).length;
+
+      return (
+        <div className={`container mx-auto p-4 max-w-3xl ${darkMode ? 'dark' : ''}`}>
+          <div className={`${darkMode ? 'bg-gray-800 text-white' : 'bg-white'} p-6 rounded-xl shadow-lg`}>
+            
+            {/* Header */}
+            <div className="flex justify-between items-center mb-6">
+              <h1 className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
+                AI Life Organizer ✨
+              </h1>
+              <button 
+                onClick={() => setDarkMode(!darkMode)}
+                className="p-2 rounded-full bg-gray-200 dark:bg-gray-600"
+              >
+                {darkMode ? '☀️' : '🌙'}
+              </button>
+            </div>
+
+            {/* Weather Widget */}
+            <div className="bg-blue-50 dark:bg-blue-900 p-3 rounded-lg mb-4">
+              <p>Weather: Loading...</p>
+            </div>
+
+            {/* Motivational Quote */}
+            <div className="bg-yellow-50 dark:bg-yellow-900 p-3 rounded-lg mb-6">
+              <p className="italic">"{quotes[Math.floor(Math.random() * quotes.length)]}"</p>
+            </div>
+
+            {/* Quick Task Templates */}
+            <div className="flex gap-2 mb-4">
+              <button 
+                onClick={() => {
+                  setTaskName('Morning Routine');
+                  setDuration(60);
+                  setCategory('Personal');
+                }}
+                className="text-sm px-3 py-1 bg-green-100 dark:bg-green-900 rounded"
+              >
+                🌅 Morning
+              </button>
+              <button 
+                onClick={() => {
+                  setTaskName('Work Block');
+                  setDuration(120);
+                  setCategory('Work');
+                }}
+                className="text-sm px-3 py-1 bg-blue-100 dark:bg-blue-900 rounded"
+              >
+                💼 Work Block
+              </button>
+            </div>
+
+            {/* Task Form */}
+            <form onSubmit={addTask} className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg shadow-md mb-6">
+              <h2 className="text-xl font-semibold mb-4 dark:text-white">Add New Task</h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <input
+                  type="text"
+                  placeholder="Task name"
+                  value={taskName}
+                  onChange={(e) => setTaskName(e.target.value)}
+                  className="p-2 border rounded dark:bg-gray-600 dark:border-gray-500"
+                  required
+                />
+                
+                <select
+                  value={priority}
+                  onChange={(e) => setPriority(e.target.value)}
+                  className="p-2 border rounded dark:bg-gray-600 dark:border-gray-500"
+                >
+                  <option value="High">High Priority</option>
+                  <option value="Medium">Medium Priority</option>
+                  <option value="Low">Low Priority</option>
+                </select>
+                
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="p-2 border rounded dark:bg-gray-600 dark:border-gray-500"
+                  style={{
+                    backgroundColor: 
+                      category === 'Work' ? '#EFF6FF' :
+                      category === 'Personal' ? '#F0FDF4' :
+                      category === 'Health' ? '#FEF2F2' : '#FAFAFA'
+                  }}
+                >
+                  <option value="Work">Work</option>
+                  <option value="Personal">Personal</option>
+                  <option value="Health">Health</option>
+                  <option value="Other">Other</option>
+                </select>
+                
+                <input
+                  type="number"
+                  placeholder="Duration (mins)"
+                  value={duration}
+                  onChange={(e) => setDuration(e.target.value)}
+                  min="1"
+                  className="p-2 border rounded dark:bg-gray-600 dark:border-gray-500"
+                  required
+                />
+                
+                <input
+                  type="date"
+                  onChange={(e) => setDueDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                  className="p-2 border rounded dark:bg-gray-600 dark:border-gray-500"
+                />
+              </div>
+              
+              <textarea 
+                placeholder="Additional notes" 
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="p-2 border rounded w-full mb-4 dark:bg-gray-600 dark:border-gray-500"
+                rows="2"
+              ></textarea>
+              
+              <button
+                type="submit"
+                className="bg-indigo-600 text-white p-2 rounded hover:bg-indigo-700 w-full"
+              >
+                Add Task
+              </button>
+            </form>
+
+            {/* Progress Section */}
+            <div className="bg-white dark:bg-gray-700 p-4 rounded-lg shadow-md mb-6">
+              <div className="flex justify-between items-center mb-2">
+                <h2 className="text-xl font-semibold dark:text-white">Progress</h2>
+                <span className="text-sm dark:text-gray-300">
+                  Completed today: {completedToday}
+                </span>
+              </div>
+              
+              <div className="w-full bg-gray-200 rounded-full h-4 dark:bg-gray-600">
+                <div
+                  className="bg-green-500 h-4 rounded-full"
+                  style={{ width: `${progress}%` }}
+                ></div>
+              </div>
+              <p className="mt-2 text-gray-700 dark:text-gray-300">
+                {tasks.filter(task => task.completed).length} of {tasks.length} tasks completed ({progress}%)
+              </p>
+            </div>
+
+            {/* Export/Import */}
+            <div className="flex gap-2 mb-6">
+              <button 
+                onClick={() => navigator.clipboard.writeText(JSON.stringify(tasks))}
+                className="px-4 py-2 bg-gray-200 dark:bg-gray-600 rounded flex-1"
+              >
+                Export Tasks
+              </button>
+              <button 
+                onClick={() => {
+                  const importedTasks = prompt('Paste your exported tasks');
+                  if (importedTasks) setTasks(JSON.parse(importedTasks));
+                }}
+                className="px-4 py-2 bg-gray-200 dark:bg-gray-600 rounded flex-1"
+              >
+                Import Tasks
+              </button>
+            </div>
+
+            {/* Habit Tracker */}
+            <div className="bg-white dark:bg-gray-700 p-4 rounded-lg shadow-md mb-6">
+              <h2 className="text-xl font-semibold mb-4 dark:text-white">Habit Tracker</h2>
+              <div className="space-y-2">
+                <label className="flex items-center dark:text-white">
+                  <input type="checkbox" className="mr-2" />
+                  Drink 8 glasses of water
+                </label>
+                <label className="flex items-center dark:text-white">
+                  <input type="checkbox" className="mr-2" />
+                  30-minute exercise
+                </label>
+                <label className="flex items-center dark:text-white">
+                  <input type="checkbox" className="mr-2" />
+                  Morning meditation
+                </label>
+              </div>
+            </div>
+
+            {/* Task List */}
+            <div className="bg-white dark:bg-gray-700 p-4 rounded-lg shadow-md">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold dark:text-white">Scheduled Tasks</h2>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => setViewMode('Daily')}
+                    className={`px-3 py-1 rounded ${viewMode === 'Daily' ? 'bg-blue-100 dark:bg-blue-900' : 'bg-gray-100 dark:bg-gray-600'}`}
+                  >
+                    Daily
+                  </button>
+                  <button 
+                    onClick={() => setViewMode('Weekly')}
+                    className={`px-3 py-1 rounded ${viewMode === 'Weekly' ? 'bg-blue-100 dark:bg-blue-900' : 'bg-gray-100 dark:bg-gray-600'}`}
+                  >
+                    Weekly
+                  </button>
+                </div>
+              </div>
+              
+              {tasks.length === 0 ? (
+                <p className="text-gray-500 dark:text-gray-400">No tasks scheduled. Add a task above!</p>
+              ) : (
+                <ul className="space-y-3">
+                  {tasks.map(task => (
+                    <li
+                      key={task.id}
+                      className={`p-4 border rounded-lg flex justify-between items-center ${
+                        task.completed ? 'bg-green-50 dark:bg-green-900 border-green-200' : 'dark:bg-gray-600'
+                      }`}
+                    >
+                      <div className="flex-1">
+                        <div className="font-medium dark:text-white">{task.name}</div>
+                        {task.notes && (
+                          <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                            {task.notes}
+                          </p>
+                        )}
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          <span className={`px-2 py-1 rounded text-xs ${
+                            task.priority === 'High' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' :
+                            task.priority === 'Medium' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
+                            'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                          }`}>
+                            {task.priority}
+                          </span>
+                          <span className="px-2 py-1 rounded bg-gray-100 dark:bg-gray-500 dark:text-white text-xs">
+                            {task.category}
+                          </span>
+                          <span className="px-2 py-1 rounded bg-purple-100 dark:bg-purple-900 dark:text-white text-xs">
+                            {task.duration} mins
+                          </span>
+                          {task.dueDate && (
+                            <span className="px-2 py-1 rounded bg-green-100 dark:bg-green-900 dark:text-white text-xs">
+                              📅 {new Date(task.dueDate).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-2 ml-4">
+                        <button
+                          onClick={() => toggleComplete(task.id)}
+                          className={`p-2 rounded ${
+                            task.completed ? 
+                              'bg-gray-200 text-gray-700 dark:bg-gray-500 dark:text-white' : 
+                              'bg-green-500 text-white'
+                          }`}
+                        >
+                          {task.completed ? 'Undo' : '✓'}
+                        </button>
+                        <button
+                          onClick={() => deleteTask(task.id)}
+                          className="p-2 bg-red-500 text-white rounded hover:bg-red-600"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
